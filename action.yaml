@@ -1,0 +1,29 @@
+name: Frontmatter from file to JSON
+author: TheWolfNL
+description: Convert frontmatter from a file to a JSON string
+
+branding:
+  icon: align-center
+  color: blue
+
+inputs:
+  file:
+    description: file path as string, it's your responsibility to checkout the code or make sure the file exists
+    required: true
+
+outputs:
+  json:
+    description: JSON string containing frontmatter
+    value: ${{ steps.data.outputs.json }}
+
+runs:
+  using: composite
+  steps:
+    - id: data
+      name: Extract frontmatter from content
+      shell: bash
+      run: |
+        JSON=$(cat '${{ inputs.file }}' | jq -R | jq -cs '.[0:([to_entries[] | select(.value == "---") | .key] | max)+1] | map(select(. == "---" | not)) | map(capture("^(?<key>[^:]+): (?<value>.*)$")) | from_entries')
+        echo 'Frontmatter:' 
+        echo $JSON | jq
+        echo "json=$JSON" >> $GITHUB_OUTPUT
